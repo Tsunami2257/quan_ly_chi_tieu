@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<!--
+  index.html — Giao diện chính của ứng dụng quản lý chi tiêu
+  ============================================================
+  File này chỉ lo phần HIỂN THỊ (cấu trúc HTML + bố cục).
+  Mọi xử lý tính toán đều nằm trong app.js.
+
+  CẤU TRÚC TRANG (từ trên xuống dưới):
+    1. Tiêu đề trang
+    2. Thanh thông tin người dùng (tên + nút đăng xuất)
+    3. 3 thẻ tổng quan (Thu / Chi / Số dư)
+    4. Form nhập giao dịch mới
+    5. Bộ lọc theo tháng
+    6. Danh sách giao dịch (được tạo bởi app.js)
+    7. Biểu đồ tròn chi tiêu (được vẽ bởi Chart.js + app.js)
+-->
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <!--
+    meta viewport: Bắt buộc cho trang web hiển thị đúng trên điện thoại.
+    Không có dòng này → trình duyệt mobile sẽ thu nhỏ trang như desktop.
+    - width=device-width : chiều rộng trang = chiều rộng màn hình thiết bị
+    - initial-scale=1.0  : không zoom in/out lúc đầu
+  -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Quản lý chi tiêu</title>
+
+  <!--
+    Thư viện icon Tabler Icons (tải từ CDN - mạng phân phối nội dung).
+    Sau khi nhúng, ta dùng icon bằng cú pháp: <i class="ti ti-tên-icon"></i>
+    Xem danh sách icon tại: https://tabler-icons.io
+  -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
+
+  <!-- File CSS của chúng ta chứa toàn bộ màu sắc và bố cục -->
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+  <!-- ============================================================
+    PHẦN 1: TIÊU ĐỀ TRANG
+    Thẻ <h1> = heading lớn nhất, tự động in đậm và to hơn text thường
+    ============================================================ -->
+  <h1>
+    <i class="ti ti-wallet" aria-hidden="true"></i>
+    Quản lý chi tiêu cá nhân
+    <!--
+      aria-hidden="true": Ẩn icon với trình đọc màn hình (screen reader).
+      Icon chỉ mang tính trang trí, không cần đọc to lên.
+    -->
+  </h1>
+
+
+  <!-- ============================================================
+    PHẦN 2: THANH THÔNG TIN NGƯỜI DÙNG
+    app.js sẽ điền tên và chữ cái đầu vào đây qua hàm initUserBar()
+    ============================================================ -->
+  <div class="user-bar" id="user-bar">
+    <div class="user-info">
+      <!-- Avatar: hình tròn màu xanh với chữ cái đầu của tên -->
+      <!-- app.js sẽ đặt chữ cái vào đây: avatar.textContent = 'A' -->
+      <div class="user-avatar" id="user-avatar">?</div>
+
+      <!-- Lời chào: app.js sẽ điền "Xin chào, Alice!" vào đây -->
+      <span id="user-greeting">Xin chào!</span>
+    </div>
+
+    <!--
+      onclick="doLogout()" : Khi bấm nút này → gọi hàm doLogout() trong app.js
+      Đây là cách phổ biến để kết nối HTML với JavaScript
+    -->
+    <button class="btn-logout" onclick="doLogout()">
+      <i class="ti ti-logout"></i> Đăng xuất
+    </button>
+  </div>
+
+
+  <!-- ============================================================
+    PHẦN 3: 3 THẺ TỔNG QUAN
+    Các thẻ h2 bên trong ban đầu để 0 ₫ (placeholder).
+    Hàm updateSummary() trong app.js sẽ cập nhật số thật.
+    ============================================================ -->
+  <div class="summary">
+    <!-- Thẻ Tổng thu — màu xanh lá -->
+    <div class="card income">
+      <p><i class="ti ti-trending-up" aria-hidden="true"></i> Tổng thu</p>
+      <h2 id="total-income">0 ₫</h2>
+      <!-- id="total-income" để app.js tìm thẻ này và thay số tiền -->
+    </div>
+
+    <!-- Thẻ Tổng chi — màu đỏ -->
+    <div class="card expense">
+      <p><i class="ti ti-trending-down" aria-hidden="true"></i> Tổng chi</p>
+      <h2 id="total-expense">0 ₫</h2>
+    </div>
+
+    <!-- Thẻ Số dư — màu xanh dương -->
+    <div class="card balance">
+      <p><i class="ti ti-scale" aria-hidden="true"></i> Số dư</p>
+      <h2 id="balance">0 ₫</h2>
+    </div>
+  </div>
+
+
+  <!-- ============================================================
+    PHẦN 4: FORM NHẬP GIAO DỊCH MỚI
+    Khi người dùng điền xong và bấm nút → hàm addTransaction() trong app.js
+    đọc các giá trị từ những ô nhập này (qua document.getElementById)
+    ============================================================ -->
+  <div class="form-box">
+    <h3>
+      <i class="ti ti-plus-circle" aria-hidden="true"></i> Thêm giao dịch
+    </h3>
+
+    <!-- Ô nhập tên giao dịch -->
+    <!-- input-icon-wrap: CSS dùng class này để đặt icon chồng lên góc trái ô nhập -->
+    <div class="input-icon-wrap">
+      <i class="ti ti-file-description" aria-hidden="true"></i>
+      <input
+        type="text"
+        id="inp-name"
+        placeholder="Tên giao dịch (VD: Tiền điện)"
+      />
+      <!--
+        type="text"  : ô nhập văn bản thông thường
+        id="inp-name": app.js dùng getElementById('inp-name') để đọc giá trị
+        placeholder  : chữ gợi ý mờ khi ô còn trống (tự biến mất khi gõ)
+      -->
+    </div>
+
+    <!-- Ô nhập số tiền -->
+    <div class="input-icon-wrap">
+      <i class="ti ti-currency-dong" aria-hidden="true"></i>
+      <input
+        type="number"
+        id="inp-amount"
+        placeholder="Số tiền (VD: 200000)"
+        min="0"
+      />
+      <!--
+        type="number": trình duyệt chỉ cho nhập chữ số, tự thêm nút tăng/giảm
+        min="0"       : không cho nhập số âm
+      -->
+    </div>
+
+    <!-- Hàng 2 ô chọn: Loại giao dịch + Danh mục -->
+    <div class="input-row">
+
+      <!--
+        *** CUSTOM SELECT — Dropdown tùy chỉnh ***
+        Không dùng <select> thông thường vì không thể thêm icon bên trong.
+        Thay vào đó, ta tự dựng dropdown bằng div, gồm 3 phần:
+
+          1. custom-select-trigger : phần hiện ra, người dùng bấm vào đây để mở
+          2. custom-select-dropdown: danh sách lựa chọn (ẩn/hiện bằng JS)
+          3. <select hidden>        : thẻ select gốc, ẩn đi nhưng vẫn dùng để
+                                     app.js đọc giá trị đã chọn
+
+        Logic mở/đóng và cập nhật giá trị nằm ở cuối file trong thẻ <script>.
+      -->
+
+      <!-- Ô chọn Loại giao dịch (Chi tiêu / Thu nhập) -->
+      <div class="custom-select-wrap" id="wrap-type">
+
+        <!-- Phần hiển thị: icon + nhãn + mũi tên -->
+        <div class="custom-select-trigger" id="trigger-type">
+          <i class="ti ti-trending-down trigger-icon" style="color:#e74c3c"></i>
+          <span class="trigger-label">Chi tiêu</span>
+          <i class="ti ti-chevron-down trigger-arrow"></i>
+          <!-- Mũi tên sẽ xoay 180° khi mở dropdown (xem style.css) -->
+        </div>
+
+        <!-- Danh sách lựa chọn (ẩn mặc định, CSS class="open" để hiện) -->
+        <div class="custom-select-dropdown" id="dropdown-type">
+          <!--
+            data-value  : giá trị lưu vào thẻ <select> ẩn khi chọn option này
+            data-icon   : tên icon để cập nhật lên trigger
+            data-color  : màu icon để cập nhật lên trigger
+            class="selected" : CSS tô nền xanh nhạt cho option đang được chọn
+          -->
+          <div class="custom-option selected" data-value="expense" data-icon="ti-trending-down" data-color="#e74c3c">
+            <i class="ti ti-trending-down" style="color:#e74c3c"></i>
+            <span>Chi tiêu</span>
+          </div>
+          <div class="custom-option" data-value="income" data-icon="ti-trending-up" data-color="#27ae60">
+            <i class="ti ti-trending-up" style="color:#27ae60"></i>
+            <span>Thu nhập</span>
+          </div>
+        </div>
+
+        <!-- Select ẩn: app.js đọc giá trị từ đây bằng getElementById('inp-type').value -->
+        <select id="inp-type" hidden>
+          <option value="expense">Chi tiêu</option>
+          <option value="income">Thu nhập</option>
+        </select>
+      </div>
+
+
+      <!-- Ô chọn Danh mục -->
+      <div class="custom-select-wrap" id="wrap-category">
+        <div class="custom-select-trigger" id="trigger-category">
+          <i class="ti ti-bowl trigger-icon" style="color:#f39c12"></i>
+          <span class="trigger-label">Ăn uống</span>
+          <i class="ti ti-chevron-down trigger-arrow"></i>
+        </div>
+
+        <div class="custom-select-dropdown" id="dropdown-category">
+          <div class="custom-option selected" data-value="Ăn uống"   data-icon="ti-bowl"                  data-color="#f39c12">
+            <i class="ti ti-bowl"                  style="color:#f39c12"></i><span>Ăn uống</span>
+          </div>
+          <div class="custom-option"              data-value="Nhà ở"     data-icon="ti-home"                  data-color="#3498db">
+            <i class="ti ti-home"                  style="color:#3498db"></i><span>Nhà ở</span>
+          </div>
+          <div class="custom-option"              data-value="Di chuyển" data-icon="ti-motorbike"             data-color="#9b59b6">
+            <i class="ti ti-motorbike"             style="color:#9b59b6"></i><span>Di chuyển</span>
+          </div>
+          <div class="custom-option"              data-value="Giải trí"  data-icon="ti-device-gamepad-2"     data-color="#e91e8c">
+            <i class="ti ti-device-gamepad-2"     style="color:#e91e8c"></i><span>Giải trí</span>
+          </div>
+          <div class="custom-option"              data-value="Lương"     data-icon="ti-briefcase"             data-color="#27ae60">
+            <i class="ti ti-briefcase"             style="color:#27ae60"></i><span>Lương</span>
+          </div>
+          <div class="custom-option"              data-value="Học tập"   data-icon="ti-book"                 data-color="#1abc9c">
+            <i class="ti ti-book"                 style="color:#1abc9c"></i><span>Học tập</span>
+          </div>
+          <div class="custom-option"              data-value="Khác"      data-icon="ti-dots-circle-horizontal" data-color="#95a5a6">
+            <i class="ti ti-dots-circle-horizontal" style="color:#95a5a6"></i><span>Khác</span>
+          </div>
+        </div>
+
+        <select id="inp-category" hidden>
+          <option value="Ăn uống">Ăn uống</option>
+          <option value="Nhà ở">Nhà ở</option>
+          <option value="Di chuyển">Di chuyển</option>
+          <option value="Giải trí">Giải trí</option>
+          <option value="Lương">Lương</option>
+          <option value="Học tập">Học tập</option>
+          <option value="Khác">Khác</option>
+        </select>
+      </div>
+    </div><!-- /.input-row -->
+
+
+    <!-- Ô chọn ngày -->
+    <div class="input-icon-wrap date-wrap">
+      <i class="ti ti-calendar" aria-hidden="true"></i>
+      <input
+        type="date"
+        id="inp-date"
+      />
+      <!--
+        type="date": Trình duyệt hiện lịch để chọn ngày.
+        Giá trị lưu dạng 'YYYY-MM-DD', ví dụ: '2025-05-20'
+      -->
+    </div>
+
+    <!-- Nút bấm để thêm giao dịch — gọi hàm addTransaction() trong app.js -->
+    <button onclick="addTransaction()">
+      <i class="ti ti-plus" aria-hidden="true"></i> Thêm giao dịch
+    </button>
+  </div><!-- /.form-box -->
+
+
+  <!-- ============================================================
+    PHẦN 5: BỘ LỌC THEO THÁNG
+    onchange="filterByMonth()": Mỗi khi người dùng chọn tháng khác
+    → trình duyệt tự động gọi hàm filterByMonth() trong app.js
+    ============================================================ -->
+  <div class="filter-box">
+    <div class="filter-label">
+      <i class="ti ti-calendar-month" aria-hidden="true"></i>
+      <span>Lọc theo tháng</span>
+    </div>
+
+    <div class="filter-input-wrap">
+      <input
+        type="month"
+        id="filter-month"
+        onchange="filterByMonth()"
+      />
+      <!--
+        type="month": Trình duyệt hiện picker chọn tháng/năm.
+        Giá trị lưu dạng 'YYYY-MM', ví dụ: '2025-05'
+      -->
+    </div>
+
+    <!-- Nút "Tất cả" — xóa bộ lọc, hiện lại toàn bộ giao dịch -->
+    <button class="btn-clear-filter" onclick="clearFilter()">
+      <i class="ti ti-list" aria-hidden="true"></i>
+      <span>Tất cả</span>
+    </button>
+  </div>
+
+
+  <!-- ============================================================
+    PHẦN 6: DANH SÁCH GIAO DỊCH
+    Div này ban đầu HOÀN TOÀN TRỐNG.
+    Hàm renderList() trong app.js sẽ tạo HTML và nhét vào đây
+    thông qua: container.innerHTML = html
+    ============================================================ -->
+  <div id="transaction-list"></div>
+
+
+  <!-- ============================================================
+    PHẦN 7: BIỂU ĐỒ TRÒN CHI TIÊU
+    ============================================================ -->
+  <h3 class="chart-title">
+    <i class="ti ti-chart-donut" aria-hidden="true"></i> Chi tiêu theo danh mục
+  </h3>
+
+  <!--
+    Div này bọc thẻ canvas, dùng để ẩn/hiện cả khối biểu đồ.
+    app.js sẽ set: wrap.style.display = 'none' hoặc 'block'
+  -->
+  <div id="chart-wrap">
+    <!--
+      Thẻ <canvas> là "tấm vải vẽ" của trình duyệt.
+      Chart.js sẽ vẽ lên đây thông qua canvas.getContext('2d').
+      width/height chỉ là kích thước gợi ý, CSS có thể override.
+    -->
+    <canvas id="myChart" width="400" height="200"></canvas>
+  </div>
+
+  <!--
+    Trạng thái trống: hiện khi chưa có giao dịch chi tiêu nào.
+    app.js sẽ set: empty.style.display = 'block' để hiện,
+                   empty.style.display = 'none'  để ẩn.
+  -->
+  <div class="chart-empty-state" id="chart-empty">
+    <i class="ti ti-chart-donut-2 empty-icon" aria-hidden="true"></i>
+    <p>Chưa có dữ liệu chi tiêu.<br>Thêm giao dịch để xem biểu đồ!</p>
+
+    <!-- Những "chip" gợi ý danh mục cho người dùng mới -->
+    <div class="chart-category-hints">
+      <span class="hint-chip eat">  <i class="ti ti-bowl"></i> Ăn uống</span>
+      <span class="hint-chip home"> <i class="ti ti-home"></i> Nhà ở</span>
+      <span class="hint-chip move"> <i class="ti ti-motorbike"></i> Di chuyển</span>
+      <span class="hint-chip fun">  <i class="ti ti-device-gamepad-2"></i> Giải trí</span>
+      <span class="hint-chip study"><i class="ti ti-book"></i> Học tập</span>
+      <span class="hint-chip other"><i class="ti ti-dots-circle-horizontal"></i> Khác</span>
+    </div>
+  </div>
+
+
+  <!-- ============================================================
+    NHÚNG JAVASCRIPT
+    Đặt ở CUỐI <body> là best practice vì:
+      1. HTML tải và hiển thị trước, người dùng không phải chờ JS
+      2. Khi JS chạy, tất cả thẻ HTML (id="transaction-list"...) đã
+         sẵn sàng trong DOM để JS tìm và thao tác
+    Nếu đặt trong <head>: JS chạy khi HTML chưa tải xong → lỗi
+  ============================================================ -->
+
+  <!--
+    Thư viện Chart.js — NHÚNG TRƯỚC app.js vì app.js dùng Chart.js.
+    Nếu đảo thứ tự → app.js chạy nhưng Chart chưa tồn tại → lỗi
+  -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- File logic chính của ứng dụng -->
+  <script src="app.js"></script>
+
+</body>
+</html>
+
+<!--
+  ============================================================
+  SCRIPT: Logic cho Custom Select (Dropdown tùy chỉnh)
+  Đặt ngoài <body> để chắc chắn chạy SAU KHI app.js đã load xong.
+
+  Hàm initCustomSelect() nhận 4 tham số:
+    triggerId    : id của phần hiển thị (bấm để mở)
+    dropdownId   : id của danh sách lựa chọn
+    hiddenSelectId: id của <select hidden> mà app.js đọc giá trị
+    wrapId       : id của thẻ bao ngoài cùng (dùng để toggle class "open")
+  ============================================================
+-->
+<script>
+  function initCustomSelect(triggerId, dropdownId, hiddenSelectId, wrapId) {
+    // Lấy các thẻ HTML cần thiết
+    const trigger      = document.getElementById(triggerId);
+    const dropdown     = document.getElementById(dropdownId);
+    const hiddenSelect = document.getElementById(hiddenSelectId);
+    const wrap         = document.getElementById(wrapId);
+    const options      = dropdown.querySelectorAll('.custom-option');
+    // querySelectorAll trả về danh sách TẤT CẢ thẻ có class "custom-option" bên trong dropdown
+
+    // --- Xử lý bấm vào trigger: mở / đóng dropdown ---
+    trigger.addEventListener('click', function(e) {
+      /*
+        addEventListener('click', fn) = "Lắng nghe sự kiện click, khi xảy ra thì chạy fn"
+        Đây là cách "gắn sự kiện" (event listener) trong JavaScript hiện đại,
+        thay thế cho cách cũ: onclick="..."
+
+        e.stopPropagation(): Ngăn sự kiện click lan lên các thẻ cha.
+        Nếu không có: click vào trigger → event lan lên document → listener
+        ở document.addEventListener bên dưới sẽ đóng dropdown ngay lập tức.
+      */
+      e.stopPropagation();
+
+      // Đóng tất cả dropdown khác đang mở (chỉ mở 1 cái tại 1 thời điểm)
+      document.querySelectorAll('.custom-select-dropdown.open').forEach(d => {
+        if (d !== dropdown) d.classList.remove('open');
+      });
+      document.querySelectorAll('.custom-select-wrap.open').forEach(w => {
+        if (w !== wrap) w.classList.remove('open');
+      });
+
+      /*
+        classList.toggle('open'):
+          - Nếu chưa có class 'open' → thêm vào  → dropdown hiện ra
+          - Nếu đã có class 'open'   → xóa đi    → dropdown ẩn đi
+        CSS quy định: .custom-select-dropdown.open { display: block; }
+      */
+      dropdown.classList.toggle('open');
+      wrap.classList.toggle('open');
+    });
+
+    // --- Xử lý khi người dùng chọn 1 option ---
+    options.forEach(opt => {
+      /*
+        forEach duyệt qua từng option và gắn sự kiện click.
+        Mỗi option khi được bấm sẽ:
+          1. Xóa class "selected" khỏi tất cả option
+          2. Thêm class "selected" vào option vừa chọn
+          3. Cập nhật icon và nhãn lên trigger
+          4. Cập nhật giá trị vào <select> ẩn (để app.js đọc)
+          5. Đóng dropdown
+      */
+      opt.addEventListener('click', function() {
+        // Bỏ chọn tất cả, sau đó chọn cái vừa bấm
+        options.forEach(o => o.classList.remove('selected'));
+        this.classList.add('selected');
+        // "this" trong function thường = phần tử bị click
+
+        // Đọc thông tin từ data-* attributes
+        const value = this.dataset.value; // data-value="expense"
+        const icon  = this.dataset.icon;  // data-icon="ti-trending-down"
+        const color = this.dataset.color; // data-color="#e74c3c"
+        const label = this.querySelector('span').textContent; // "Chi tiêu"
+
+        // Cập nhật hiển thị trên trigger
+        trigger.querySelector('.trigger-icon').className   = 'ti ' + icon + ' trigger-icon';
+        trigger.querySelector('.trigger-icon').style.color = color;
+        trigger.querySelector('.trigger-label').textContent = label;
+
+        // Đồng bộ với <select hidden> để app.js đọc được
+        hiddenSelect.value = value;
+
+        // Đóng dropdown
+        dropdown.classList.remove('open');
+        wrap.classList.remove('open');
+      });
+    });
+  }
+
+  // Khởi tạo dropdown cho ô "Loại giao dịch"
+  initCustomSelect('trigger-type',     'dropdown-type',     'inp-type',     'wrap-type');
+
+  // Khởi tạo dropdown cho ô "Danh mục"
+  initCustomSelect('trigger-category', 'dropdown-category', 'inp-category', 'wrap-category');
+
+  /*
+    Đóng tất cả dropdown khi người dùng click ra ngoài.
+    Listener này gắn vào document (toàn trang), nên mọi click đều qua đây.
+    Click vào trigger thì stopPropagation() ở trên ngăn không cho chạy vào đây.
+  */
+  document.addEventListener('click', function() {
+    document.querySelectorAll('.custom-select-dropdown.open').forEach(d => d.classList.remove('open'));
+    document.querySelectorAll('.custom-select-wrap.open').forEach(w => w.classList.remove('open'));
+  });
+</script>

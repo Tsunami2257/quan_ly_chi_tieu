@@ -1,0 +1,1079 @@
+/*
+  style.css — Toàn bộ màu sắc, khoảng cách và bố cục của ứng dụng
+  ================================================================
+  File này được cấu trúc từ trên xuống dưới theo thứ tự:
+    1.  Reset mặc định trình duyệt (áp dụng cho mọi thẻ)
+    2.  Bố cục tổng thể (body)
+    3.  Tiêu đề trang (h1)
+    4.  3 thẻ tổng quan (Thu / Chi / Số dư)
+    5.  Form nhập giao dịch
+    6.  Bộ lọc theo tháng
+    7.  Từng dòng giao dịch
+    8.  Biểu đồ tròn
+    9.  Custom Select (dropdown có icon)
+    10. Trang đăng nhập / đăng ký
+    11. Thanh thông tin người dùng
+    12. Responsive — điện thoại nhỏ
+
+  KHÁI NIỆM CĂN BẢN:
+    selector  { property: value; }
+    selector  : chỉ định thẻ nào sẽ bị ảnh hưởng (.class, #id, thẻ, *)
+    property  : thuộc tính cần thay đổi (màu, kích thước, vị trí...)
+    value     : giá trị cụ thể
+*/
+
+
+/* ================================================================
+   BƯỚC 1: XÓA STYLE MẶC ĐỊNH CỦA TRÌNH DUYỆT
+   Mỗi trình duyệt (Chrome, Firefox...) tự thêm margin/padding vào
+   các thẻ HTML. Điều này gây ra sự khác biệt giữa các trình duyệt.
+   → Xóa sạch rồi tự định nghĩa lại, đảm bảo nhất quán mọi nơi.
+   ================================================================ */
+* {
+  /*
+    Dấu * = "áp dụng cho MỌI thẻ HTML trên trang"
+    Đây là "CSS reset" — kỹ thuật chuẩn trong lập trình web.
+  */
+
+  box-sizing: border-box;
+  /*
+    Quy tắc tính kích thước thẻ:
+
+    MÔ HÌNH MẶC ĐỊNH (content-box — không có dòng này):
+      Khai báo width: 200px
+      Thêm padding: 20px
+      → Thực tế chiều rộng = 200 + 20 + 20 = 240px  ← dễ bị tràn layout
+
+    MÔ HÌNH MỚI (border-box — có dòng này):
+      Khai báo width: 200px
+      Thêm padding: 20px
+      → Thực tế chiều rộng = vẫn đúng 200px  ← padding "ăn" vào bên trong
+      → Dễ tính toán hơn, ít lỗi layout hơn
+  */
+
+  margin: 0;
+  padding: 0;
+  /*
+    Xóa tất cả margin (khoảng cách bên ngoài thẻ)
+    và padding (khoảng cách bên trong thẻ) về 0.
+    Sau đó ta tự thêm lại những chỗ cần thiết.
+  */
+}
+
+
+/* ================================================================
+   BƯỚC 2: BỐ CỤC TỔNG THỂ
+   Style cho thẻ <body> = toàn bộ trang
+   ================================================================ */
+body {
+  font-family: Arial, sans-serif;
+  /*
+    Font chữ dùng cho cả trang.
+    Danh sách ưu tiên: dùng Arial trước,
+    nếu máy không có Arial → dùng bất kỳ font sans-serif nào có sẵn.
+    "sans-serif" = font không có chân (như Arial, Helvetica).
+    Đối lập với "serif" = font có chân (như Times New Roman).
+  */
+
+  background: #f4f6f8;
+  /*
+    Màu nền xám rất nhạt cho toàn trang.
+    Mã hex #RRGGBB: RR=đỏ, GG=xanh lá, BB=xanh dương (thang 00-FF).
+    #f4f6f8 ≈ gần trắng, hơi ngả xanh xám nhạt.
+  */
+
+  padding: 20px;
+  /* Khoảng cách giữa nội dung và 4 cạnh trình duyệt */
+
+  max-width: 700px;
+  /*
+    Giới hạn chiều rộng tối đa.
+    Trên màn hình rộng (1920px), nội dung sẽ dừng lại ở 700px
+    thay vì bị kéo giãn hết chiều rộng → dễ đọc hơn.
+  */
+
+  margin: 0 auto;
+  /*
+    Cú pháp rút gọn của margin:
+      margin: [trên-dưới] [trái-phải]
+    "0 auto" = không có margin trên/dưới, margin trái/phải tự động.
+
+    Khi margin trái = phải = auto → nội dung được căn ra giữa màn hình.
+    Đây là cách phổ biến nhất để căn giữa một khối nội dung.
+  */
+}
+
+
+/* ================================================================
+   BƯỚC 3: TIÊU ĐỀ TRANG
+   ================================================================ */
+h1 {
+  text-align: center;    /* Căn chữ ra giữa */
+  margin-bottom: 20px;   /* Khoảng cách xuống phần bên dưới */
+  color: #333;           /* Màu chữ: gần đen (đen thuần #000 hơi chói) */
+}
+
+/* Icon ví tiền trong tiêu đề */
+h1 .ti {
+  /*
+    h1 .ti = thẻ có class="ti" NẰM TRONG thẻ h1
+    Dấu cách giữa h1 và .ti = quan hệ "cha - con cháu"
+  */
+  font-size: 28px;
+  vertical-align: -4px; /* Dịch xuống 4px để icon thẳng hàng với chữ */
+  color: #3498db;        /* Màu xanh dương */
+}
+
+
+/* ================================================================
+   BƯỚC 4: 3 THẺ TỔNG QUAN (Thu / Chi / Số dư)
+   ================================================================ */
+
+/* --- Khung bao ngoài chứa 3 thẻ --- */
+.summary {
+  display: flex;
+  /*
+    Flexbox là công cụ sắp xếp layout hiện đại.
+    Mặc định HTML xếp các thẻ block theo chiều DỌC (mỗi thẻ chiếm 1 hàng).
+    display: flex → xếp các thẻ con theo chiều NGANG trong 1 hàng.
+
+    Không có flex:          Có flex:
+      [Thẻ 1]               [Thẻ 1] [Thẻ 2] [Thẻ 3]
+      [Thẻ 2]
+      [Thẻ 3]
+  */
+  gap: 12px;             /* Khoảng cách đều nhau giữa 3 thẻ */
+  margin-bottom: 20px;   /* Khoảng cách phía dưới */
+}
+
+/* --- Style dùng chung cho 1 thẻ tổng quan --- */
+.card {
+  flex: 1;
+  /*
+    flex: 1 = "chiếm 1 phần không gian còn lại".
+    Cả 3 thẻ đều flex: 1 → mỗi thẻ chiếm 1/3 chiều rộng của .summary.
+    Nếu thẻ thứ 2 là flex: 2 → thẻ đó chiếm 2/4, 2 thẻ còn lại mỗi cái 1/4.
+  */
+  background: white;
+  border-radius: 10px;  /* Bo tròn 4 góc với bán kính 10px */
+  padding: 16px;        /* Khoảng cách giữa nội dung và viền thẻ */
+  text-align: center;   /* Căn nội dung ra giữa */
+}
+
+/* Chữ nhỏ phía trên mỗi thẻ ("Tổng thu", "Tổng chi"...) */
+.card p {
+  font-size: 13px;
+  color: #888;           /* Xám nhạt */
+  margin-bottom: 6px;
+}
+
+/* Màu icon tương ứng với từng loại thẻ */
+.card.income p .ti  { color: #27ae60; } /* Xanh lá = thu nhập */
+.card.expense p .ti { color: #e74c3c; } /* Đỏ = chi tiêu */
+.card.balance p .ti { color: #2980b9; } /* Xanh dương = số dư */
+/*
+  .card.income = thẻ có class "card" VÀ class "income" (không có dấu cách)
+  Khác với .card .income (có dấu cách) = thẻ .income nằm trong .card
+*/
+
+/* Số tiền hiển thị lớn */
+.card h2 {
+  font-size: 18px;
+  color: #333;
+}
+
+/* Override màu h2 cho từng loại thẻ */
+.card.income h2  { color: #27ae60 !important; }
+.card.expense h2 { color: #e74c3c !important; }
+.card.balance h2 { color: #2980b9 !important; }
+/*
+  !important: Ghi đè lên bất kỳ rule nào khác.
+  Dùng khi có xung đột CSS và ta chắc chắn muốn giá trị này thắng.
+  Hãy dùng tiết kiệm — lạm dụng gây khó debug.
+*/
+
+
+/* ================================================================
+   BƯỚC 5: FORM NHẬP GIAO DỊCH
+   ================================================================ */
+
+/* Khung ngoài cùng của form */
+.form-box {
+  background: white;
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+/* Tiêu đề "Thêm giao dịch" */
+.form-box h3 {
+  margin-bottom: 12px;
+  color: #333;
+  font-weight: 600;      /* Đậm vừa (thang 100-900, normal=400, bold=700) */
+  font-size: 16px;
+  background: none;      /* Xóa nền phòng CSS khác bị ảnh hưởng */
+  -webkit-text-fill-color: #333; /* Safari cần property riêng này */
+}
+
+.form-box h3 .ti {
+  color: #3498db;
+  vertical-align: -2px;
+}
+
+/*
+  .input-icon-wrap: Thẻ bọc ô nhập + icon.
+  Dùng position: relative để làm "neo" (reference point)
+  cho icon con có position: absolute.
+*/
+.input-icon-wrap {
+  position: relative;
+  /*
+    position: relative:
+      - Thẻ vẫn ở vị trí bình thường trong luồng trang
+      - Các thẻ con có position: absolute sẽ tính vị trí
+        dựa trên thẻ này (thay vì dựa trên cửa sổ trình duyệt)
+  */
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center; /* Căn icon và input thẳng hàng theo chiều dọc */
+}
+
+/* Icon nằm đè lên góc trái của ô nhập */
+.input-icon-wrap .ti {
+  position: absolute;
+  /*
+    position: absolute:
+      - Thẻ bị "nhấc ra" khỏi luồng trang (không chiếm chỗ)
+      - Vị trí tính dựa trên thẻ cha gần nhất có position != static
+      - Ở đây thẻ cha là .input-icon-wrap có position: relative
+  */
+  left: 12px;
+  /*
+    Cách mép trái của .input-icon-wrap 12px.
+    left/right/top/bottom dùng với position: absolute để định vị chính xác.
+  */
+  top: 50%;
+  transform: translateY(-50%);
+  /*
+    Căn icon ra giữa theo chiều dọc:
+    - top: 50% → đặt mép trên icon ở giữa chiều cao thẻ cha
+    - translateY(-50%) → dịch icon lên 50% chiều cao của CHÍNH icon
+    Kết quả: tâm của icon nằm đúng giữa thẻ cha.
+  */
+  color: #bbb;
+  font-size: 15px;
+  pointer-events: none;
+  /* pointer-events: none → chuột "xuyên qua" icon, click vào ô nhập thay vì icon */
+  z-index: 1;
+  /* z-index: layer xếp chồng. Icon (z-index:1) hiện lên trên ô nhập (z-index mặc định: 0) */
+  line-height: 1;
+}
+
+/* Màu icon riêng cho từng loại ô nhập */
+.input-icon-wrap .ti-file-description { color: #3498db; } /* Ô tên: xanh */
+.input-icon-wrap .ti-currency-dong    { color: #27ae60; } /* Ô tiền: xanh lá */
+.input-icon-wrap .ti-calendar         { color: #9b59b6; } /* Ô ngày: tím */
+
+/* Style chung cho input và select bên trong .input-icon-wrap */
+.input-icon-wrap input,
+.input-icon-wrap select {
+  width: 100%;            /* Chiếm hết chiều rộng của thẻ cha */
+  padding: 11px 12px 11px 38px; /* Trên Phải Dưới Trái — padding trái 38px để tránh icon */
+  margin-bottom: 0;
+  border: 1px solid #ddd; /* Viền mỏng màu xám nhạt */
+  border-radius: 6px;
+  font-size: 14px;
+  height: 42px;           /* Chiều cao cố định để các ô đều nhau */
+  background: #fff;
+  color: #333;
+  appearance: auto;       /* Giữ lại style native của select (mũi tên dropdown) */
+}
+
+/* 2 ô select nằm ngang nhau */
+.input-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 0;
+}
+
+.input-row .input-icon-wrap {
+  flex: 1; /* Mỗi ô chiếm 1 nửa chiều rộng */
+}
+
+/* Style riêng cho ô chọn ngày */
+.input-icon-wrap.date-wrap input[type="date"] {
+  padding: 11px 12px 11px 38px;
+  color: #333;
+  cursor: pointer; /* Hiện con trỏ bàn tay khi rê chuột */
+}
+
+/* Tùy chỉnh icon lịch native của trình duyệt */
+.input-icon-wrap.date-wrap input[type="date"]::-webkit-calendar-picker-indicator {
+  /* ::-webkit-... là pseudo-element của WebKit (Chrome, Safari, Edge) */
+  opacity: 0.5;
+  cursor: pointer;
+  padding-right: 4px;
+}
+
+.input-icon-wrap.date-wrap input[type="date"]::-webkit-datetime-edit-fields-wrapper {
+  padding: 0;
+}
+
+.input-icon-wrap.date-wrap input[type="date"]::-webkit-datetime-edit {
+  color: #555;
+}
+
+/* Hiệu ứng khi click vào ô nhập (focus state) */
+.input-icon-wrap input:focus,
+.input-icon-wrap select:focus {
+  outline: none;
+  /* Xóa viền xanh/đen mặc định của trình duyệt */
+  border-color: #3498db;
+  /* Thêm viền xanh tùy chỉnh */
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.12);
+  /*
+    box-shadow tạo hiệu ứng "glow" xanh nhạt xung quanh ô nhập.
+    Cú pháp: offset-x offset-y blur-radius spread-radius color
+    0 0 0 3px = không dịch chuyển, không blur, lan rộng 3px
+    rgba(52, 152, 219, 0.12) = màu xanh với độ mờ 12%
+  */
+}
+
+/* Đổi màu icon khi ô nhập được focus */
+.input-icon-wrap input:focus ~ .ti,
+.input-icon-wrap select:focus ~ .ti {
+  color: #3498db;
+  /*
+    ~ là "general sibling selector" = thẻ anh chị sau.
+    input:focus ~ .ti = thẻ .ti đứng SAU input đang focus (cùng thẻ cha)
+    → icon được tô màu khi ô nhập bên cạnh được focus
+  */
+}
+
+.input-icon-wrap select {
+  padding-right: 32px; /* Thêm chỗ cho mũi tên dropdown */
+  cursor: pointer;
+}
+
+/* Nút "Thêm giao dịch" */
+.form-box button {
+  width: 100%;
+  padding: 12px;
+  background: #3498db;   /* Màu nền xanh */
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 15px;
+  cursor: pointer;
+  display: flex;          /* Flexbox để icon và chữ thẳng hàng */
+  align-items: center;
+  justify-content: center;
+  gap: 6px;               /* Khoảng cách giữa icon và chữ */
+  margin-top: 10px;
+}
+
+.form-box button:hover {
+  background: #2980b9;    /* Tối hơn khi rê chuột → feedback trực quan */
+}
+
+
+/* ================================================================
+   BƯỚC 6: BỘ LỌC THEO THÁNG
+   ================================================================ */
+.filter-box {
+  display: flex;
+  align-items: center;    /* Căn thẳng hàng theo chiều dọc */
+  gap: 10px;
+  margin-bottom: 16px;
+  background: white;
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: 1px solid #eee;
+}
+
+.filter-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #666;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;   /* Không cho chữ xuống dòng */
+  flex-shrink: 0;        /* Không cho bị thu nhỏ khi không đủ chỗ */
+}
+
+.filter-label .ti {
+  font-size: 16px;
+  color: #3498db;
+}
+
+.filter-input-wrap {
+  flex: 1;    /* Chiếm hết phần không gian còn lại */
+  min-width: 0; /* Cho phép thu nhỏ nếu cần (flexbox quirk) */
+}
+
+.filter-input-wrap input[type="month"] {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 7px;
+  font-size: 13px;
+  color: #333;
+  background: #f8fafc;
+  cursor: pointer;
+  transition: border-color .2s, box-shadow .2s;
+  /* transition: tạo hiệu ứng chuyển đổi mượt (0.2 giây) khi CSS thay đổi */
+  height: 38px;
+}
+
+.filter-input-wrap input[type="month"]:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52,152,219,.12);
+  background: #fff;
+}
+
+/* Nút "Tất cả" */
+.btn-clear-filter {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 14px;
+  background: #f1f5f9;   /* Xám rất nhạt */
+  color: #555;
+  border: 1px solid #e0e0e0;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .15s, color .15s;
+  height: 38px;
+  flex-shrink: 0;
+}
+
+.btn-clear-filter:hover {
+  background: #3498db;   /* Khi hover: nền chuyển xanh */
+  color: white;
+  border-color: #3498db;
+}
+
+
+/* ================================================================
+   BƯỚC 7: TỪNG DÒNG GIAO DỊCH
+   HTML của phần này được tạo động bởi hàm renderList() trong app.js
+   ================================================================ */
+
+/* Container mỗi dòng */
+.transaction-item {
+  background: white;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+  /*
+    justify-content: space-between = Đẩy các thẻ con ra 2 đầu.
+    Thẻ đầu tiên → sát trái.
+    Thẻ cuối cùng → sát phải.
+    Khoảng giữa tự động giãn ra.
+  */
+  align-items: center;
+}
+
+/* Tên giao dịch (in đậm) */
+.transaction-item .info .name {
+  font-weight: bold;
+  font-size: 14px;
+}
+
+/* Thông tin phụ: danh mục và ngày */
+.transaction-item .info .meta {
+  font-size: 12px;
+  color: #888;
+  margin-top: 2px;
+}
+
+/* Cột bên phải */
+.transaction-item .right {
+  text-align: right;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Số tiền */
+.transaction-item .amount {
+  font-weight: bold;
+  font-size: 15px;
+}
+
+.transaction-item .amount.income  { color: #27ae60; } /* Xanh = Thu */
+.transaction-item .amount.expense { color: #e74c3c; } /* Đỏ   = Chi */
+
+/* Nút xóa (icon thùng rác) */
+.transaction-item .btn-delete {
+  background: none;
+  border: none;
+  color: #ccc;      /* Xám nhạt — không quá nổi bật */
+  font-size: 17px;
+  cursor: pointer;
+  margin-left: 12px;
+  line-height: 1;
+  padding: 2px;
+}
+
+.transaction-item .btn-delete:hover {
+  color: #e74c3c;   /* Chuyển đỏ khi rê chuột → cảnh báo hành động xóa */
+}
+
+
+/* ================================================================
+   BƯỚC 8: BIỂU ĐỒ TRÒN
+   ================================================================ */
+
+/* Tiêu đề phần biểu đồ */
+.chart-title {
+  margin-top: 20px;
+  margin-bottom: 0;
+  color: #333;
+  font-size: 15px;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* Khung bao canvas biểu đồ */
+#chart-wrap {
+  display: none;
+  /*
+    Mặc định ẩn (display: none = không chiếm không gian, không hiển thị).
+    Khi có dữ liệu, app.js sẽ đổi thành display: block.
+    Khác với visibility: hidden = vẫn chiếm chỗ nhưng vô hình.
+  */
+}
+
+/* Canvas vẽ biểu đồ */
+#myChart {
+  background: white;
+  border-radius: 10px;
+  padding: 16px;
+  margin-top: 8px;
+  max-width: 400px;
+  display: block;       /* Canvas mặc định là inline, cần đổi sang block */
+  margin-left: auto;    /* Cùng với margin-right: auto → căn giữa */
+  margin-right: auto;
+}
+
+/* Trạng thái trống (khi chưa có dữ liệu chi tiêu) */
+.chart-empty-state {
+  display: none; /* Mặc định ẩn, app.js hiện khi cần */
+  background: white;
+  border-radius: 10px;
+  padding: 32px 20px;
+  margin-top: 8px;
+  text-align: center;
+}
+
+/* Icon lớn trong trạng thái trống */
+.chart-empty-state .empty-icon {
+  font-size: 48px;
+  color: #e0e7ef;       /* Xám nhạt, không quá nổi */
+  margin-bottom: 12px;
+  display: block;       /* Xuống dòng */
+}
+
+.chart-empty-state p {
+  color: #bbb;
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+
+/* Vùng chứa các "chip" gợi ý danh mục */
+.chart-category-hints {
+  display: flex;
+  flex-wrap: wrap;     /* Xuống hàng mới nếu không đủ chỗ */
+  gap: 8px;
+  justify-content: center;
+}
+
+/* Mỗi chip gợi ý */
+.chart-category-hints .hint-chip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: 20px; /* Bo tròn nhiều → hình viên thuốc (pill) */
+  font-size: 12px;
+  font-weight: 500;
+  border: 1.5px solid;
+}
+
+/* Màu riêng cho từng chip theo danh mục */
+.hint-chip.eat   { background:#fff8ec; color:#e67e22; border-color:#f5c97a; } /* Cam */
+.hint-chip.home  { background:#eaf4fd; color:#2980b9; border-color:#a8d4f5; } /* Xanh dương */
+.hint-chip.move  { background:#f5f0fb; color:#8e44ad; border-color:#c9aee8; } /* Tím */
+.hint-chip.fun   { background:#fef0f7; color:#c0397f; border-color:#f0a0d0; } /* Hồng */
+.hint-chip.study { background:#e8faf5; color:#1abc9c; border-color:#7de0c8; } /* Ngọc */
+.hint-chip.other { background:#f4f6f8; color:#888;    border-color:#d5dde5; } /* Xám */
+
+.chart-category-hints .hint-chip .ti {
+  font-size: 14px;
+}
+
+
+/* ================================================================
+   BƯỚC 9: CUSTOM SELECT DROPDOWN (Dropdown tùy chỉnh có icon)
+   ================================================================ */
+
+.input-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+/* Bọc ngoài cùng của 1 custom select */
+.custom-select-wrap {
+  flex: 1;
+  position: relative;   /* Neo cho dropdown con */
+  user-select: none;    /* Không cho chọn văn bản khi click vào dropdown */
+}
+
+/* Phần hiển thị (người dùng bấm vào đây để mở dropdown) */
+.custom-select-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  height: 42px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 14px;
+  color: #333;
+  transition: border-color .2s, box-shadow .2s;
+}
+
+/* Đổi viền sang xanh khi dropdown đang mở */
+.custom-select-wrap.open .custom-select-trigger {
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52,152,219,.12);
+}
+
+.trigger-icon {
+  font-size: 15px;
+  flex-shrink: 0; /* Không thu nhỏ icon khi không đủ chỗ */
+}
+
+.trigger-label {
+  flex: 1; /* Chiếm hết không gian còn lại giữa icon và mũi tên */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis; /* Cắt chữ và thêm "..." nếu quá dài */
+}
+
+.trigger-arrow {
+  font-size: 14px;
+  color: #bbb;
+  flex-shrink: 0;
+  transition: transform .2s; /* Hiệu ứng xoay mượt */
+}
+
+/* Xoay mũi tên 180° khi dropdown mở */
+.custom-select-wrap.open .trigger-arrow {
+  transform: rotate(180deg);
+}
+
+/* Panel dropdown (danh sách lựa chọn) */
+.custom-select-dropdown {
+  display: none; /* Ẩn mặc định */
+  position: absolute;
+  top: calc(100% + 4px);
+  /*
+    calc() tính toán CSS.
+    100% = chiều cao của thẻ cha (.custom-select-wrap)
+    + 4px = thêm khoảng cách nhỏ giữa trigger và dropdown
+    → Dropdown hiện ngay bên dưới trigger, cách 4px
+  */
+  left: 0;
+  right: 0;      /* Cùng chiều rộng với trigger */
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 6px 20px rgba(0,0,0,.1); /* Đổ bóng mờ */
+  z-index: 100;  /* Hiện lên trên các thẻ khác */
+  overflow: hidden; /* Cắt bo góc cho các option */
+}
+
+/* Thêm class "open" để hiện dropdown */
+.custom-select-dropdown.open {
+  display: block;
+}
+
+/* Mỗi lựa chọn trong dropdown */
+.custom-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  font-size: 13.5px;
+  color: #333;
+  cursor: pointer;
+  transition: background .12s;
+}
+
+.custom-option:hover {
+  background: #f4f8fd; /* Nền xanh rất nhạt khi rê chuột */
+}
+
+/* Option đang được chọn */
+.custom-option.selected {
+  background: #eaf4fd;
+  font-weight: 600;
+}
+
+.custom-option .ti {
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+
+/* ================================================================
+   BƯỚC 10: TRANG ĐĂNG NHẬP / ĐĂNG KÝ
+   ================================================================ */
+
+/* Nền trang login — gradient xanh đậm */
+body.login-page {
+  /*
+    Ghi đè style của body thông thường chỉ khi body có class="login-page".
+    Cách này cho phép 2 trang (login và index) dùng chung 1 file CSS
+    nhưng có nền khác nhau.
+  */
+  min-height: 100vh;
+  /*
+    100vh = 100% chiều cao cửa sổ trình duyệt (viewport height).
+    min-height thay vì height để trang vẫn kéo dài được khi nội dung dài hơn màn hình.
+  */
+  max-width: 100%;   /* Override max-width: 700px của body thường */
+  background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%);
+  /*
+    linear-gradient(góc, màu_đầu, màu_cuối):
+      135deg = góc chéo từ trái trên → phải dưới
+      #1a73e8 = xanh dương sáng (bắt đầu)
+      #0d47a1 = xanh dương đậm (kết thúc)
+    Kết quả: nền gradient xanh rất đẹp.
+  */
+  display: flex;
+  align-items: center;    /* Căn thẻ login ra giữa theo chiều dọc */
+  justify-content: center; /* Căn thẻ login ra giữa theo chiều ngang */
+  padding: 20px;
+}
+
+/* Thẻ trắng chứa form login */
+.login-card {
+  background: white;
+  border-radius: 16px;
+  padding: 36px 32px;
+  width: 100%;
+  max-width: 400px;    /* Không rộng quá trên desktop */
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2); /* Đổ bóng sâu, tạo cảm giác nổi lên */
+}
+
+/* Logo và tiêu đề */
+.login-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+/* Vòng tròn logo màu gradient */
+.login-logo {
+  width: 64px;
+  height: 64px;
+  background: linear-gradient(135deg, #3498db, #1a73e8);
+  border-radius: 50%; /* Bo tròn = hình tròn hoàn hảo (50% mỗi góc) */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 12px; /* Căn giữa theo chiều ngang */
+  font-size: 28px;
+  color: white;
+}
+
+.login-header h1 {
+  font-size: 22px;
+  color: #1a1a2e;
+  margin-bottom: 4px;
+}
+
+.login-subtitle {
+  font-size: 13px;
+  color: #888;
+}
+
+/* Thanh tab chuyển đổi */
+.login-tabs {
+  display: flex;
+  background: #f4f6f8; /* Nền xám nhạt cho cả thanh tab */
+  border-radius: 8px;
+  padding: 4px;
+  margin-bottom: 20px;
+  gap: 4px;
+}
+
+/* Mỗi nút tab */
+.tab-btn {
+  flex: 1; /* Chiếm 1/2 chiều rộng */
+  padding: 9px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  background: transparent;
+  color: #888;
+  transition: all .2s;
+}
+
+/* Tab đang được chọn */
+.tab-btn.active {
+  background: white;
+  color: #1a73e8;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+}
+
+/* Vùng thông báo lỗi / thành công */
+.auth-msg {
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  margin-bottom: 14px;
+}
+
+.auth-msg.error {
+  background: #fdecea;   /* Nền đỏ nhạt */
+  color: #c62828;        /* Chữ đỏ đậm */
+  border: 1px solid #f5c6c6;
+}
+
+.auth-msg.success {
+  background: #e8f5e9;   /* Nền xanh nhạt */
+  color: #2e7d32;        /* Chữ xanh đậm */
+  border: 1px solid #b9dfbb;
+}
+
+/* Thẻ bọc ô nhập trong form auth */
+.auth-input-wrap {
+  position: relative;  /* Neo cho icon tuyệt đối */
+  margin-bottom: 12px;
+}
+
+/* Icon đặt tuyệt đối vào góc trái ô nhập */
+.auth-input-wrap .ti {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #bbb;
+  font-size: 16px;
+  pointer-events: none; /* Không chặn click */
+}
+
+/* Ô nhập liệu */
+.auth-input-wrap input {
+  width: 100%;
+  padding: 11px 40px 11px 40px; /* Padding đều 2 bên cho icon trái và nút mắt phải */
+  border: 1.5px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #333;
+  transition: border-color .2s, box-shadow .2s;
+  height: 44px;
+  background: #fafafa;  /* Nền xám rất nhạt phân biệt với nền trắng trang */
+}
+
+.auth-input-wrap input:focus {
+  outline: none;
+  border-color: #1a73e8;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(26,115,232,.12);
+}
+
+/* Nút hiện/ẩn mật khẩu (icon mắt) */
+.eye-btn {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #bbb;
+  cursor: pointer;
+  padding: 4px;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.eye-btn:hover { color: #555; }
+
+/* Nút chính: Đăng nhập / Tạo tài khoản */
+.auth-btn {
+  width: 100%;
+  padding: 12px;
+  background: linear-gradient(135deg, #1a73e8, #0d47a1);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 4px;
+  transition: opacity .2s;
+}
+
+.auth-btn:hover { opacity: 0.9; } /* Hơi mờ đi khi hover */
+
+
+/* ================================================================
+   BƯỚC 11: THANH THÔNG TIN NGƯỜI DÙNG (trên index.html)
+   ================================================================ */
+.user-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* Đẩy tên ra trái, nút đăng xuất ra phải */
+  background: white;
+  border-radius: 10px;
+  padding: 10px 16px;
+  margin-bottom: 16px;
+  border: 1px solid #eef2f7;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Avatar tròn màu gradient */
+.user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3498db, #1a73e8);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 15px;
+  flex-shrink: 0; /* Không bao giờ bị thu nhỏ */
+}
+
+#user-greeting {
+  font-size: 14px;
+  color: #333;
+  font-weight: 500;
+}
+
+/* Nút đăng xuất */
+.btn-logout {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 14px;
+  background: #fff0f0;   /* Nền đỏ rất nhạt */
+  color: #e74c3c;        /* Chữ đỏ */
+  border: 1px solid #ffd5d5;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all .15s;
+}
+
+.btn-logout:hover {
+  background: #e74c3c;  /* Nền chuyển đỏ đậm khi hover */
+  color: white;
+  border-color: #e74c3c;
+}
+
+
+/* ================================================================
+   BƯỚC 12: RESPONSIVE — THIẾT KẾ ĐÁP ỨNG CHO ĐIỆN THOẠI
+   @media query: Các rule bên trong CHỈ áp dụng khi điều kiện đúng.
+   max-width: 480px = "khi màn hình ≤ 480px" (điện thoại nhỏ)
+   ================================================================ */
+@media (max-width: 480px) {
+  /*
+    Trên điện thoại, màn hình hẹp → phải điều chỉnh layout:
+    - Giảm padding/font-size
+    - Xếp các thẻ theo chiều dọc thay vì ngang
+    - Ẩn bớt chữ, chỉ hiện icon
+  */
+
+  body {
+    padding: 12px; /* Giảm từ 20px → 12px để tiết kiệm không gian */
+  }
+
+  h1 {
+    font-size: 18px;     /* Nhỏ hơn */
+    margin-bottom: 12px;
+  }
+
+  /* 3 thẻ tổng quan: xếp DỌCTHAY vì ngang */
+  .summary {
+    flex-direction: column; /* Đổi hướng flex từ row (ngang) → column (dọc) */
+    gap: 8px;
+  }
+
+  .card {
+    padding: 12px;
+  }
+
+  .card h2 {
+    font-size: 16px;
+  }
+
+  /* 2 ô select xếp dọc thay vì ngang */
+  .input-row {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  /* Thanh lọc: cho phép xuống dòng */
+  .filter-box {
+    flex-wrap: wrap; /* Các thẻ con được phép xuống hàng mới */
+    gap: 8px;
+  }
+
+  .filter-input-wrap {
+    width: 100%;
+    flex: none; /* Không tự co giãn nữa */
+  }
+
+  /* Tên người dùng: cắt bớt nếu quá dài */
+  #user-greeting {
+    font-size: 13px;
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis; /* Hiện "..." khi text bị cắt */
+    white-space: nowrap;
+  }
+
+  /* Nút đăng xuất: ẩn chữ, chỉ hiện icon */
+  .btn-logout span {
+    display: none;
+    /*
+      Nút logout có cấu trúc: <button><i class="ti ti-logout"></i> Đăng xuất</button>
+      Chữ "Đăng xuất" nằm trong text node, nhưng ta không thể hide text node bằng CSS.
+      Cách này chỉ hoạt động nếu chữ được bọc trong thẻ <span>.
+      Thẻ <i> (icon) không bị ảnh hưởng nên icon vẫn hiện.
+    */
+  }
+}
+
+/* Media query cho màn hình rất nhỏ — dự phòng, có thể thêm rule sau */
+@media (max-width: 360px) {}

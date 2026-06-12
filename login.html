@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<!--
+  login.html — Trang đăng nhập và đăng ký
+  =========================================
+  Trang này không cần server hay database.
+  Tất cả tài khoản lưu ngay trong localStorage của trình duyệt.
+
+  LUỒNG HOẠT ĐỘNG:
+    Đăng ký:
+      Người dùng điền form → doRegister() kiểm tra → lưu vào localStorage['users']
+      → chuyển sang tab đăng nhập
+
+    Đăng nhập:
+      Người dùng điền form → doLogin() kiểm tra → lưu phiên vào localStorage['currentUser']
+      → chuyển sang index.html
+
+    Đăng xuất (trong index.html):
+      doLogout() xóa localStorage['currentUser'] → chuyển về trang này
+-->
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Đăng nhập — Quản lý chi tiêu</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
+  <link rel="stylesheet" href="style.css" />
+
+  <style>
+    /*
+      CSS viết thẳng trong <style> thay vì file .css riêng
+      → chỉ dùng cho những style đặc thù của trang này,
+        không muốn ảnh hưởng sang index.html
+
+      Vì sao cần reset riêng cho .eye-btn .ti?
+      → style.css có rule: .auth-input-wrap .ti { position: absolute; ... }
+        Rule này vô tình áp dụng luôn cho icon bên trong nút mắt,
+        làm icon bị lệch chỗ và không click được.
+      → Ta cần "ghi đè" (override) lại riêng cho icon trong nút mắt.
+    */
+    .login-card, .login-card * {
+      font-family: Arial, sans-serif;
+    }
+
+    /* Fix: Reset icon bên trong nút mắt về trạng thái bình thường */
+    .auth-input-wrap .eye-btn {
+      pointer-events: auto;        /* Bật lại khả năng nhận click */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .auth-input-wrap .eye-btn .ti {
+      position: static !important;    /* Hủy position:absolute từ rule chung */
+      transform: none !important;     /* Hủy translateY(-50%) từ rule chung */
+      left: auto !important;
+      top: auto !important;
+      pointer-events: auto !important; /* Cho phép click đi qua icon lên button */
+      color: #aaa;
+      font-size: 16px;
+      line-height: 1;
+    }
+
+    .auth-input-wrap .eye-btn:hover .ti {
+      color: #555;
+    }
+
+    /* Ẩn icon "mắt" mặc định của Edge và Chrome trong ô mật khẩu */
+    input[type="password"]::-ms-reveal,
+    input[type="password"]::-ms-clear {
+      display: none !important;
+    }
+
+    /* Thêm padding bên phải để chữ không bị che bởi nút mắt */
+    .auth-input-wrap input[type="password"],
+    .auth-input-wrap input[type="text"] {
+      padding-right: 44px !important;
+    }
+  </style>
+</head>
+
+<!--
+  class="login-page": CSS trong style.css có rule riêng cho body.login-page
+  → tạo nền gradient xanh, căn thẻ login ra giữa màn hình
+-->
+<body class="login-page">
+
+  <!-- Thẻ trắng chứa toàn bộ form đăng nhập/đăng ký -->
+  <div class="login-card">
+
+    <!-- ============================================================
+      PHẦN 1: LOGO + TIÊU ĐỀ
+      ============================================================ -->
+    <div class="login-header">
+      <!-- Logo: vòng tròn gradient với icon ví tiền -->
+      <div class="login-logo">
+        <i class="ti ti-wallet"></i>
+      </div>
+      <h1>Chi Tiêu Cá Nhân</h1>
+      <p class="login-subtitle">Quản lý tài chính thông minh</p>
+    </div>
+
+
+    <!-- ============================================================
+      PHẦN 2: THANH CHUYỂN TAB
+      2 nút bấm để chuyển giữa form Đăng nhập và Đăng ký.
+      JS sẽ toggle class "active" để CSS tô nền trắng cho tab đang chọn.
+      ============================================================ -->
+    <div class="login-tabs">
+      <!--
+        class="tab-btn active": Tab "Đăng nhập" được chọn mặc định khi mở trang
+        onclick="switchTab('login')": Gọi hàm switchTab với tham số 'login'
+      -->
+      <button class="tab-btn active" id="tab-login"    onclick="switchTab('login')">Đăng nhập</button>
+      <button class="tab-btn"        id="tab-register" onclick="switchTab('register')">Đăng ký</button>
+    </div>
+
+
+    <!-- ============================================================
+      PHẦN 3: VÙNG THÔNG BÁO LỖI / THÀNH CÔNG
+      Mặc định ẩn (style="display:none").
+      showMsg() sẽ hiện lên khi cần thông báo.
+      ============================================================ -->
+    <div id="auth-msg" class="auth-msg" style="display:none"></div>
+
+
+    <!-- ============================================================
+      PHẦN 4: FORM ĐĂNG NHẬP
+      Hiện mặc định. switchTab('register') sẽ ẩn nó đi.
+      ============================================================ -->
+    <div id="form-login">
+
+      <!-- Ô nhập tên đăng nhập -->
+      <div class="auth-input-wrap">
+        <i class="ti ti-user"></i>
+    
+        <!-- autocomplete: gợi ý trình duyệt lưu/điền username tự động -->
+        <input
+        type="text"
+        id="login-username"
+        placeholder="Tên đăng nhập"
+        autocomplete="username"
+        />
+      </div>
+
+      <!-- Ô nhập mật khẩu (có nút hiện/ẩn) -->
+      <div class="auth-input-wrap">
+        <i class="ti ti-lock"></i>
+        <input
+          type="password"
+          id="login-password"
+          placeholder="Mật khẩu"
+          autocomplete="current-password"
+        />
+        <!--
+          Nút hiện/ẩn mật khẩu (icon mắt)
+          - type="button" ngăn form submit khi bấm
+          - tabindex="-1" không nhảy vào đây khi nhấn Tab
+          - onclick gọi toggleEye() với id ô nhập và tham chiếu đến nút này
+        -->
+        <button type="button" class="eye-btn" onclick="toggleEye('login-password', this)" tabindex="-1">
+          <i class="ti ti-eye"></i>
+        </button>
+      </div>
+
+      <!-- Nút đăng nhập -->
+      <button class="auth-btn" onclick="doLogin()">
+        <i class="ti ti-login"></i> Đăng nhập
+      </button>
+    </div><!-- /#form-login -->
+
+
+    <!-- ============================================================
+      PHẦN 5: FORM ĐĂNG KÝ
+      Mặc định ẩn (style="display:none").
+      switchTab('register') sẽ hiện nó lên.
+      ============================================================ -->
+    <div id="form-register" style="display:none">
+
+      <!-- Ô nhập tên đăng nhập mới -->
+      <div class="auth-input-wrap">
+        <i class="ti ti-user"></i>
+        <input
+          type="text"
+          id="reg-username"
+          placeholder="Tên đăng nhập (tối thiểu 3 ký tự)"
+          autocomplete="username"
+        />
+      </div>
+
+      <!-- Ô nhập họ tên thật -->
+      <div class="auth-input-wrap">
+        <i class="ti ti-id-badge"></i>
+        <input
+          type="text"
+          id="reg-fullname"
+          placeholder="Họ và tên"
+        />
+      </div>
+
+      <!-- Ô nhập mật khẩu mới -->
+      <div class="auth-input-wrap">
+        <i class="ti ti-lock"></i>
+        <input
+          type="password"
+          id="reg-password"
+          placeholder="Mật khẩu (tối thiểu 6 ký tự)"
+          autocomplete="new-password"
+        />
+        <button type="button" class="eye-btn" onclick="toggleEye('reg-password', this)" tabindex="-1">
+          <i class="ti ti-eye"></i>
+        </button>
+      </div>
+
+      <!-- Ô nhập xác nhận mật khẩu -->
+      <div class="auth-input-wrap">
+        <i class="ti ti-lock-check"></i>
+        <input
+          type="password"
+          id="reg-password2"
+          placeholder="Xác nhận mật khẩu"
+          autocomplete="new-password"
+        />
+        <button type="button" class="eye-btn" onclick="toggleEye('reg-password2', this)" tabindex="-1">
+          <i class="ti ti-eye"></i>
+        </button>
+      </div>
+
+      <!-- Nút tạo tài khoản -->
+      <button class="auth-btn" onclick="doRegister()">
+        <i class="ti ti-user-plus"></i> Tạo tài khoản
+      </button>
+    </div><!-- /#form-register -->
+
+  </div><!-- /.login-card -->
+
+
+  <!-- ============================================================
+    SCRIPT XỬ LÝ ĐĂNG NHẬP / ĐĂNG KÝ
+    Viết thẳng vào HTML cho tiện (không cần file auth.js riêng)
+    ============================================================ -->
+  <script>
+    // ================================================================
+    //  KIỂM TRA ĐÃ ĐĂNG NHẬP CHƯA
+    //  Nếu đã đăng nhập rồi → bỏ qua trang này, vào thẳng app
+    // ================================================================
+    if (localStorage.getItem('currentUser')) {
+      window.location.href = 'index.html';
+    }
+
+
+    // ----------------------------------------------------------------
+    //  HÀM: switchTab(tab)
+    //  Chuyển giữa form Đăng nhập và Đăng ký
+    // ----------------------------------------------------------------
+    function switchTab(tab) {
+      // Kiểm tra xem tab được yêu cầu có phải 'login' không
+      const isLogin = (tab === 'login');
+
+      // Hiện/ẩn 2 form dựa trên kết quả kiểm tra
+      // isLogin ? 'block' : 'none'  → nếu đang về login: hiện form login, ẩn form đăng ký
+      document.getElementById('form-login').style.display    = isLogin ? 'block' : 'none';
+      document.getElementById('form-register').style.display = isLogin ? 'none'  : 'block';
+
+      // Cập nhật tab đang active (CSS dùng class "active" để tô trắng)
+      // classList.toggle(class, condition): thêm class nếu condition = true, bỏ nếu false
+      document.getElementById('tab-login').classList.toggle('active', isLogin);
+      document.getElementById('tab-register').classList.toggle('active', !isLogin);
+
+      // Ẩn thông báo lỗi/thành công cũ khi chuyển tab
+      hideMsg();
+    }
+
+
+    // ----------------------------------------------------------------
+    //  HÀM: showMsg(text, type)
+    //  Hiển thị thông báo trong vùng auth-msg
+    //  type: 'error'   → nền đỏ nhạt
+    //        'success' → nền xanh nhạt
+    // ----------------------------------------------------------------
+    function showMsg(text, type) {
+      const el = document.getElementById('auth-msg');
+      el.textContent  = text;   // Đặt nội dung chữ
+      el.className    = 'auth-msg ' + type; // Thêm class tương ứng để CSS tô màu
+      el.style.display = 'block';  // Hiện thẻ lên (ban đầu display:none)
+    }
+
+    function hideMsg() {
+      document.getElementById('auth-msg').style.display = 'none';
+    }
+
+
+    // ----------------------------------------------------------------
+    //  HÀM: getUsers()
+    //  Lấy danh sách tất cả tài khoản từ localStorage
+    //  Trả về mảng object, mỗi object là 1 tài khoản:
+    //    { username: 'alice', fullname: 'Alice', password: '123456' }
+    // ----------------------------------------------------------------
+    function getUsers() {
+      const raw = localStorage.getItem('users');
+
+      /*
+        Lần đầu mở app, chưa có ai đăng ký → 'users' chưa tồn tại → raw = null
+        Dùng toán tử 3 ngôi: raw ? ... : ...
+          - Nếu raw có giá trị (không null/undefined) → parse JSON → mảng tài khoản
+          - Nếu raw = null → trả về mảng rỗng []
+      */
+      return raw ? JSON.parse(raw) : [];
+    }
+
+
+    // ----------------------------------------------------------------
+    //  HÀM: doRegister()
+    //  Xử lý khi người dùng bấm nút "Tạo tài khoản"
+    // ----------------------------------------------------------------
+    function doRegister() {
+      // --- Đọc giá trị từ form đăng ký ---
+      const username  = document.getElementById('reg-username').value.trim();
+      const fullname  = document.getElementById('reg-fullname').value.trim();
+      const password  = document.getElementById('reg-password').value;
+      // Không .trim() mật khẩu vì khoảng trắng trong mật khẩu có thể là cố ý
+      const password2 = document.getElementById('reg-password2').value;
+
+      // --- Kiểm tra từng điều kiện, nếu sai thì dừng lại ---
+
+      // Tên đăng nhập phải có ít nhất 3 ký tự
+      if (username.length < 3) {
+        showMsg('Tên đăng nhập phải có ít nhất 3 ký tự!', 'error');
+        return; // Dừng hàm, không thực hiện các bước tiếp theo
+      }
+
+      if (fullname === '') {
+        showMsg('Vui lòng nhập họ và tên!', 'error');
+        return;
+      }
+
+      // Mật khẩu phải có ít nhất 6 ký tự
+      if (password.length < 6) {
+        showMsg('Mật khẩu phải có ít nhất 6 ký tự!', 'error');
+        return;
+      }
+
+      // 2 ô mật khẩu phải giống nhau
+      if (password !== password2) {
+        showMsg('Mật khẩu xác nhận không khớp!', 'error');
+        return;
+      }
+
+      // --- Kiểm tra tên đăng nhập chưa bị dùng ---
+      const users = getUsers();
+
+      /*
+        Array.find(callback) trả về phần tử đầu tiên thỏa điều kiện.
+        Nếu không tìm thấy → trả về undefined.
+
+        Ở đây ta tìm xem có user nào trùng username không.
+      */
+      const trungTen = users.find(u => u.username === username);
+
+      if (trungTen) {
+        showMsg('Tên đăng nhập đã được sử dụng!', 'error');
+        return;
+      }
+
+      // --- Tất cả hợp lệ → Tạo tài khoản ---
+      /*
+        Shorthand property: { username, fullname, password }
+        Tương đương với: { username: username, fullname: fullname, password: password }
+        Khi tên biến và tên property giống nhau, JS cho phép viết gọn.
+
+        ⚠️ Lưu ý bảo mật: Trong thực tế phải mã hóa mật khẩu (hash).
+        Ở đây lưu plain text chỉ vì đây là bài học, không phải sản phẩm thật.
+      */
+      users.push({ username, fullname, password });
+      localStorage.setItem('users', JSON.stringify(users));
+
+      showMsg('Đăng ký thành công! Hãy đăng nhập.', 'success');
+
+      /*
+        Sau 1.2 giây → tự động chuyển sang tab đăng nhập
+        và điền sẵn tên đăng nhập vừa đăng ký.
+
+        setTimeout(fn, milliseconds): chạy fn sau X mili-giây
+        1200 mili-giây = 1.2 giây
+      */
+      setTimeout(() => {
+        switchTab('login');
+        document.getElementById('login-username').value = username;
+      }, 1200);
+    }
+
+
+    // ----------------------------------------------------------------
+    //  HÀM: doLogin()
+    //  Xử lý khi người dùng bấm nút "Đăng nhập"
+    // ----------------------------------------------------------------
+    function doLogin() {
+      const username = document.getElementById('login-username').value.trim();
+      const password = document.getElementById('login-password').value;
+
+      // Kiểm tra không được để trống
+      if (username === '' || password === '') {
+        showMsg('Vui lòng nhập đầy đủ thông tin!', 'error');
+        return;
+      }
+
+      const users = getUsers();
+
+      /*
+        Tìm tài khoản khớp CẢ 2 điều kiện:
+          - username đúng
+          - password đúng
+        Nếu sai 1 trong 2 → trả về undefined
+
+        Dùng && (AND): cả 2 phải đúng thì mới trả về true
+      */
+      const user = users.find(u => u.username === username && u.password === password);
+
+      if (!user) {
+        // !user = true khi user là undefined (không tìm thấy)
+        showMsg('Tên đăng nhập hoặc mật khẩu không đúng!', 'error');
+        return;
+      }
+
+      // --- Đăng nhập thành công → Lưu phiên ---
+      /*
+        Chỉ lưu username và fullname, KHÔNG lưu password vào phiên.
+        Đây là phương pháp bảo mật tốt hơn — không để password
+        nằm ở nơi không cần thiết.
+
+        app.js sẽ đọc localStorage['currentUser'] để biết ai đang đăng nhập.
+      */
+      localStorage.setItem('currentUser', JSON.stringify({
+        username: user.username,
+        fullname: user.fullname
+      }));
+
+      showMsg('Đăng nhập thành công! Đang chuyển trang...', 'success');
+
+      // Sau 0.8 giây → chuyển sang trang chính
+      setTimeout(() => {
+        window.location.href = 'index.html';
+      }, 800);
+    }
+
+
+    // ----------------------------------------------------------------
+    //  HÀM: toggleEye(inputId, btn)
+    //  Chuyển đổi giữa ẩn/hiện mật khẩu khi bấm icon mắt
+    // ----------------------------------------------------------------
+    function toggleEye(inputId, btn) {
+      const inp    = document.getElementById(inputId);
+      const eyeBtn = btn.closest('.eye-btn') || btn;
+      // .closest(selector) tìm thẻ cha gần nhất khớp selector
+      // Đảm bảo ta luôn có tham chiếu đến thẻ <button>, dù click vào icon hay button
+
+      const icon = eyeBtn.querySelector('i'); // Tìm thẻ <i> bên trong nút
+
+      if (inp.type === 'password') {
+        // Đang ẩn mật khẩu → chuyển sang hiện
+        inp.type = 'text';
+        if (icon) icon.className = 'ti ti-eye-off'; // Đổi sang icon "mắt gạch"
+      } else {
+        // Đang hiện mật khẩu → chuyển sang ẩn
+        inp.type = 'password';
+        if (icon) icon.className = 'ti ti-eye';     // Đổi lại icon "mắt bình thường"
+      }
+    }
+
+
+    // ----------------------------------------------------------------
+    //  Cho phép nhấn Enter để submit form
+    //  Người dùng không cần di chuột đến nút bấm
+    // ----------------------------------------------------------------
+    document.addEventListener('keydown', function(e) {
+      // e.key === 'Enter' kiểm tra phím vừa nhấn có phải Enter không
+      if (e.key !== 'Enter') return;
+
+      // Xác định form nào đang hiện để biết gọi hàm nào
+      const loginVisible = document.getElementById('form-login').style.display !== 'none';
+
+      if (loginVisible) {
+        doLogin();    // Form đăng nhập đang hiện → đăng nhập
+      } else {
+        doRegister(); // Form đăng ký đang hiện → đăng ký
+      }
+    });
+  </script>
+
+</body>
+</html>
