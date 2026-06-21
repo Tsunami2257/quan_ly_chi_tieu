@@ -30,31 +30,25 @@
       CSS viết thẳng trong <style> thay vì file .css riêng
       → chỉ dùng cho những style đặc thù của trang này,
         không muốn ảnh hưởng sang index.html
-
-      Vì sao cần reset riêng cho .eye-btn .ti?
-      → style.css có rule: .auth-input-wrap .ti { position: absolute; ... }
-        Rule này vô tình áp dụng luôn cho icon bên trong nút mắt,
-        làm icon bị lệch chỗ và không click được.
-      → Ta cần "ghi đè" (override) lại riêng cho icon trong nút mắt.
     */
     .login-card, .login-card * {
       font-family: Arial, sans-serif;
     }
 
-    /* Fix: Reset icon bên trong nút mắt về trạng thái bình thường */
+ 
     .auth-input-wrap .eye-btn {
-      pointer-events: auto;        /* Bật lại khả năng nhận click */
+      pointer-events: auto;        
       display: flex;
       align-items: center;
       justify-content: center;
     }
 
     .auth-input-wrap .eye-btn .ti {
-      position: static !important;    /* Hủy position:absolute từ rule chung */
-      transform: none !important;     /* Hủy translateY(-50%) từ rule chung */
+      position: static !important;   
+      transform: none !important;    
       left: auto !important;
       top: auto !important;
-      pointer-events: auto !important; /* Cho phép click đi qua icon lên button */
+      pointer-events: auto !important; 
       color: #aaa;
       font-size: 16px;
       line-height: 1;
@@ -78,10 +72,7 @@
   </style>
 </head>
 
-<!--
-  class="login-page": CSS trong style.css có rule riêng cho body.login-page
-  → tạo nền gradient xanh, căn thẻ login ra giữa màn hình
--->
+
 <body class="login-page">
 
   <!-- Thẻ trắng chứa toàn bộ form đăng nhập/đăng ký -->
@@ -362,14 +353,7 @@
       }
 
       // --- Tất cả hợp lệ → Tạo tài khoản ---
-      /*
-        Shorthand property: { username, fullname, password }
-        Tương đương với: { username: username, fullname: fullname, password: password }
-        Khi tên biến và tên property giống nhau, JS cho phép viết gọn.
 
-        ⚠️ Lưu ý bảo mật: Trong thực tế phải mã hóa mật khẩu (hash).
-        Ở đây lưu plain text chỉ vì đây là bài học, không phải sản phẩm thật.
-      */
       users.push({ username, fullname, password });
       localStorage.setItem('users', JSON.stringify(users));
 
